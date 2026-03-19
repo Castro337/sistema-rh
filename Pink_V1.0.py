@@ -96,25 +96,31 @@ def main(page: ft.Page):
         page.update()
 
     # --- UI LAYOUT ---
+   # --- UI LAYOUT ---
     page.add(
         ft.Text("PINK V2.6 - Gestão Avançada", size=24, weight="bold", color="pink"),
         salario_in,
-        ft.ExpansionTile(title=ft.Text("Vendas (5 Produtos)"), controls=[comissao_geral_perc] + vendas_inputs),
-        ft.ExpansionTile(title=ft.Text("Benefícios (Valor + %)"), 
-                         controls=[ft.Column([ben_inputs[i], ben_percs[i]]) for i in range(5)]),
-        tipo_op, check_ferias,
+        ft.ExpansionTile(
+            title=ft.Text("Vendas (5 Produtos)"), 
+            controls=[comissao_geral_perc] + vendas_inputs
+        ),
+        ft.ExpansionTile(
+            title=ft.Text("Benefícios (Valor + %)"), 
+            controls=[ft.Column([ben_inputs[i], ben_percs[i]]) for i in range(5)]
+        ),
+        tipo_op, 
+        check_ferias,
         ft.ElevatedButton("Calcular Tudo", on_click=processar, bgcolor="pink", color="white"),
         container_res,
         ft.Divider(),
         ft.Text("Aurora IA", size=18, weight="bold", color=PALETA["ia"]),
-        ft.Container(content=chat_ia, bgcolor="#eeeeee", padding=10),
+        ft.Container(content=chat_ia, bgcolor="#eeeeee", padding=10, border_radius=10),
         ft.Row([pergunta_ia, ft.IconButton(ft.Icons.SEND, on_click=responder_aurora)])
     )
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
     ft.app(target=main, view=ft.AppView.WEB_BROWSER, host="0.0.0.0", port=port)
-    )
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
