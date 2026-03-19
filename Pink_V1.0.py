@@ -11,7 +11,7 @@ PALETA = {
 }
 
 def main(page: ft.Page):
-    page.title = "Pink V3.3 | Gestão de Estoque e Vendas"
+    page.title = "PINK Calculo Salarial | By Jean Castro"
     page.bgcolor = PALETA["fundo_tela"]
     page.scroll = ft.ScrollMode.ADAPTIVE
     page.padding = 20
