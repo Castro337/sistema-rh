@@ -1,11 +1,3 @@
-Perfeito, entendi! Vamos consolidar tudo na Versão 3.8.
-
-Para atender ao seu pedido de transparência total, o relatório final agora separa claramente "O que entrou" (Proventos) de "O que saiu" (Descontos). Assim, você tem uma visão de "extrato" profissional, igual a um holerite de verdade.
-
-Também restaurei a IA Pink com as frases de análise que você gosta e garanti que os Benefícios e Extras apareçam destacados no cálculo.
-
-Pink V3.8 | Transparência Total: Proventos vs Descontos
-Python
 import flet as ft
 import os
 
@@ -21,7 +13,7 @@ PALETA = {
 }
 
 def main(page: ft.Page):
-    page.title = "Pink V3.8 | Extrato Detalhado & IA"
+    page.title = "PINK Cálculo Salarial V3.8 Com I.A Integrada | By Jean Castro"
     page.bgcolor = PALETA["fundo"]
     page.scroll = ft.ScrollMode.ADAPTIVE
     page.padding = 30
