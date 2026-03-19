@@ -11,7 +11,7 @@ PALETA = {
 }
 
 def main(page: ft.Page):
-    page.title = "Pink V3.2 | Visibilidade Total"
+    page.title = "Pink V3.2 | By Jean Castro"
     page.bgcolor = PALETA["fundo_tela"]
     page.scroll = ft.ScrollMode.ADAPTIVE
     page.padding = 30
