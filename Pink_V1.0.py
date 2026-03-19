@@ -122,7 +122,7 @@ def main(page: ft.Page):
 
     # --- LAYOUT FINAL ---
     page.add(
-        ft.Text("PINK SYSTEM V4.3", size=28, weight="bold", color=PALETA["primaria"]),
+        ft.Text("PINKCalculo Salarial | By Jean Castro", size=28, weight="bold", color=PALETA["primaria"]),
         modo_calc,
         salario_in,
         extra_in,
