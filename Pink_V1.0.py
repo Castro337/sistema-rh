@@ -13,7 +13,7 @@ PALETA = {
 }
 
 def main(page: ft.Page):
-    page.title = "PINK Cálculo Salarial V3.8 Com I.A Integrada | By Jean Castro"
+    page.title = "PINK Calculo Salarial V3.8 | By Jean Castro"
     page.bgcolor = PALETA["fundo"]
     page.scroll = ft.ScrollMode.ADAPTIVE
     page.padding = 30
@@ -137,5 +137,4 @@ def main(page: ft.Page):
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
-    ft.app(target=main, view=ft.AppView.WEB_BROWSER, host="0.0.0.0", port=port)
-
+    ft.app(target=main, view=ft.AppView.WEB_BROWSER, host="0.0.0.0", port=port
