@@ -87,7 +87,7 @@ def main(page: ft.Page):
 
     # --- CONSTRUÇÃO DA PÁGINA ---
     page.add(
-        ft.Text("PINK - SISTEMA DE RH", size=25, weight="bold", color="pink"),
+        ft.Text("PINK - SISTEMA DE RH - By Jean Castro", size=25, weight="bold", color="pink"),
         ft.Divider(),
         salario_in,
         vendas_in,
