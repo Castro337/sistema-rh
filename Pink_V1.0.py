@@ -1,156 +1,148 @@
 import flet as ft
 import os
 
-# 1. PADRÕES DE DESIGN (Alto Contraste e Rosa Vibrante)
+# 1. PADRÕES DE DESIGN (Foco em Legibilidade e Alto Contraste)
 PALETA = {
-    "primaria": ft.Colors.PINK_600,
+    "primaria": ft.Colors.DEEP_PURPLE_700,
     "fundo": ft.Colors.WHITE,
-    "card": "#FFF0F5",
-    "ia_cor": ft.Colors.DEEP_PURPLE_500,
-    "texto": ft.Colors.BLACK,
-    "positivo": ft.Colors.GREEN_700,
-    "negativo": ft.Colors.RED_700
+    "card_fundo": "#F5F5F5",
+    "ia_cor": ft.Colors.PINK_700,
+    "texto_preto": ft.Colors.BLACK,
+    "positivo": ft.Colors.GREEN_800,
+    "negativo": ft.Colors.RED_800
 }
 
 def main(page: ft.Page):
-    page.title = "PINK Calculo Salarial |By Jean"
+    page.title = "PINK Calculo Salarial | By Jean Castro"
     page.bgcolor = PALETA["fundo"]
     page.scroll = ft.ScrollMode.ADAPTIVE
     page.padding = 30
 
-    # --- MOTOR DE CÁLCULO CLT (INSS + IRRF 2026) ---
-    def calcular_clt(bruto):
-        # INSS Progressivo 2026
-        if bruto <= 1518: inss = bruto * 0.075
-        elif bruto <= 2793: inss = (bruto * 0.09) - 22.77
-        elif bruto <= 4190: inss = (bruto * 0.12) - 106.56
-        else: inss = (bruto * 0.14) - 190.36
+    # --- MOTOR DE CÁLCULO (CLT + RESCISÃO) ---
+    def calcular_impostos(valor):
+        # Simulação de INSS Progressivo 2026
+        if valor <= 1518: inss = valor * 0.075
+        elif valor <= 2793: inss = (valor * 0.09) - 22.77
+        elif valor <= 4190: inss = (valor * 0.12) - 106.56
+        else: inss = (valor * 0.14) - 190.36
         
-        # IRRF Progressivo
-        base_ir = bruto - inss
-        if base_ir <= 2259: irrf = 0
-        elif base_ir <= 2826: irrf = (base_ir * 0.075) - 169.44
-        elif base_ir <= 3751: irrf = (base_ir * 0.15) - 381.44
-        else: irrf = (base_ir * 0.225) - 662.77
-        
-        return round(inss, 2), round(irrf, 2)
+        # Base de Cálculo IRRF
+        base_ir = valor - inss
+        irrf = (base_ir * 0.075) - 169.44 if base_ir > 2259 else 0
+        return round(inss, 2), round(max(0, irrf), 2)
 
     # --- CAMPOS DE ENTRADA ---
-    # Correção: weight movido para text_style para evitar erro de inicialização
+    modo_calc = ft.RadioGroup(
+        content=ft.Row([
+            ft.Radio(value="mensal", label="Cálculo Mensal", fill_color=PALETA["primaria"]),
+            ft.Radio(value="rescisao", label="Cálculo Rescisão", fill_color=PALETA["primaria"])
+        ]),
+        value="mensal"
+    )
+
     salario_in = ft.TextField(
         label="Salário Base", 
-        prefix=ft.Text("R$ "), 
+        prefix=ft.Text("R$ ", color=PALETA["texto_preto"]), 
         border_color=PALETA["primaria"],
-        text_style=ft.TextStyle(weight="bold", color=PALETA["texto"])
+        color=PALETA["texto_preto"],
+        text_style=ft.TextStyle(weight="bold")
     )
 
     extra_in = ft.TextField(
-        label="Benefícios e Extras (Outros Ganho)", 
-        prefix=ft.Text("R$ "), 
+        label="Benefícios e Prêmios Extras", 
+        prefix=ft.Text("R$ ", color=PALETA["texto_preto"]), 
         border_color=PALETA["primaria"],
+        color=PALETA["texto_preto"],
         value="0"
     )
 
-    # Lista para Vendas Detalhadas
+    # Gerador de campos de vendas
     vendas_lista = []
-    for i in range(1, 6):
-        qtd = ft.TextField(label="Qtd", value="1", width=70)
-        mat = ft.TextField(label=f"Material {i}", expand=True)
-        val = ft.TextField(label="Valor Un.", prefix=ft.Text("R$ "), width=110)
-        perc = ft.Slider(min=0, max=100, divisions=100, label="Comissão: {value}%", value=3)
-        
-        container_venda = ft.Container(
-            content=ft.Column([
-                ft.Row([qtd, mat, val], spacing=10),
-                perc,
-                ft.Divider(color=ft.Colors.PINK_100)
-            ]),
-            padding=15, bgcolor=PALETA["card"], border_radius=15
-        )
-        vendas_lista.append({"qtd": qtd, "mat": mat, "val": val, "perc": perc, "ui": container_venda})
+    for i in range(1, 4):
+        val = ft.TextField(label=f"Valor Venda {i}", prefix=ft.Text("R$ "), color=PALETA["texto_preto"])
+        perc = ft.Slider(min=0, max=20, divisions=20, label="Comissão: {value}%", value=3, active_color=PALETA["primaria"])
+        vendas_lista.append({"val": val, "perc": perc})
 
-    # --- ÁREA DE RESULTADOS ---
-    res_txt = ft.Text("", color=PALETA["texto"], size=16)
-    ia_txt = ft.Text("", color=PALETA["ia_cor"], italic=True, weight="bold")
+    # --- CONTAINER DE RESULTADO ---
+    res_txt = ft.Text("", color=PALETA["texto_preto"], size=15)
+    ia_txt = ft.Text("", color=PALETA["ia_cor"], weight="bold", italic=True)
     
     res_container = ft.Container(
         visible=False, 
         padding=25, 
-        border_radius=20, 
-        bgcolor="#F8F9FA", 
-        border=ft.border.all(2, PALETA["primaria"])
+        border_radius=15, 
+        bgcolor=PALETA["card_fundo"], 
+        border=ft.border.all(1, ft.Colors.GREY_400),
+        content=ft.Column([res_txt, ft.Divider(), ia_txt])
     )
 
-    def realizar_calculo(e):
+    def processar(e):
         try:
-            # 1. PROVENTOS (O que foi acrescentado)
-            sal_fixo = float(salario_in.value or 0)
-            beneficios = float(extra_in.value or 0)
+            base = float(salario_in.value or 0)
+            extras = float(extra_in.value or 0)
             
-            total_comissao = 0
+            # Cálculo de Comissões
+            comissao_total = 0
             for item in vendas_lista:
-                q = float(item["qtd"].value or 0)
                 v = float(item["val"].value or 0)
                 p = item["perc"].value / 100
-                total_comissao += (q * v) * p
+                comissao_total += (v * p)
 
-            bruto = sal_fixo + beneficios + total_comissao
+            bruto = base + extras + comissao_total
+            aviso_previo = 0
             
-            # 2. DEDUÇÕES (O que foi descontado)
-            inss, irrf = calcular_clt(bruto)
+            # Lógica de Rescisão (Simulação de Aviso Prévio)
+            if modo_calc.value == "rescisao":
+                aviso_previo = base
+                bruto += aviso_previo
+
+            inss, irrf = calcular_impostos(bruto)
             liquido = bruto - inss - irrf
 
-            # 3. EXTRATO DETALHADO (Conforme solicitado)
+            # Relatório Detalhado (O que acrescentou vs O que descontou)
+            tipo_label = "MENSAL (HOLERITE)" if modo_calc.value == "mensal" else "RESCISÃO DE CONTRATO"
+            
             res_txt.value = (
-                f"➕ ACRESCENTADO (PROVENTOS):\n"
-                f"   • Salário Base: R$ {sal_fixo:.2f}\n"
-                f"   • Extras/Benefícios: R$ {beneficios:.2f}\n"
-                f"   • Comissões: R$ {total_comissao:.2f}\n\n"
-                f"➖ DESCONTADO (DEDUÇÕES CLT):\n"
+                f"📋 TIPO: {tipo_label}\n"
+                f"-------------------------------------------\n"
+                f"✅ ACRESCENTADO (PROVENTOS):\n"
+                f"   • Salário Base: R$ {base:.2f}\n"
+                f"   • Comissões: R$ {comissao_total:.2f}\n"
+                f"   • Extras/Prêmios: R$ {extras:.2f}\n"
+                + (f"   • Aviso Prévio: R$ {aviso_previo:.2f}\n" if aviso_previo > 0 else "") +
+                f"\n❌ DESCONTADO (DEDUÇÕES):\n"
                 f"   • INSS: R$ {inss:.2f}\n"
-                f"   • IRRF: R$ {irrf:.2f}\n\n"
-                f"💰 LÍQUIDO FINAL: R$ {liquido:.2f}"
+                f"   • IRRF: R$ {irrf:.2f}\n"
+                f"-------------------------------------------\n"
+                f"💰 VALOR LÍQUIDO: R$ {liquido:.2f}"
             )
 
-            # 4. INTELIGÊNCIA IA
-            if total_comissao > (bruto * 0.3):
-                ia_txt.value = "🤖 IA PINK: Sensacional! Suas comissões representam uma fatia forte do seu ganho. Continue assim!"
-            else:
-                ia_txt.value = "🤖 IA PINK: Cálculo finalizado. Os descontos seguem a tabela progressiva oficial."
-
-            res_container.content = ft.Column([
-                ft.Text("📑 EXTRATO DETALHADO", size=20, weight="bold", color=ft.Colors.PINK_900),
-                res_txt,
-                ft.Divider(),
-                ft.Row([ft.Icon(ft.Icons.AUTO_AWESOME, color=PALETA["ia_cor"]), ft.Text("ANÁLISE DA IA", weight="bold", color=PALETA["ia_cor"])]),
-                ia_txt
-            ])
-            
+            ia_txt.value = f"🤖 IA PINK: Análise de {modo_calc.value} pronta. Tudo certo para o fechamento!"
             res_container.visible = True
             page.update()
-
-        except Exception as err:
-            page.snack_bar = ft.SnackBar(ft.Text("Erro: Verifique se usou pontos em vez de vírgulas."))
+        except:
+            page.snack_bar = ft.SnackBar(ft.Text("Erro: Verifique os campos de valor."))
             page.snack_bar.open = True
             page.update()
 
-    # --- MONTAGEM DO APP ---
+    # --- MONTAGEM DO LAYOUT ---
     page.add(
-        ft.Text("PINK SYSTEM V4.0", size=28, weight="bold", color=ft.Colors.PINK_900),
-        ft.Text("Dados de Contrato e Benefícios", weight="bold"),
+        ft.Text("PINK SYSTEM V4.2", size=28, weight="bold", color=PALETA["primaria"]),
+        ft.Text("Tipo de Cálculo", color=PALETA["texto_preto"], weight="w500"),
+        modo_calc,
         salario_in,
         extra_in,
         ft.ExpansionTile(
-            title=ft.Text("🛒 Lançar Vendas e Produtos", weight="bold", color=ft.Colors.PINK_700),
-            controls=[item["ui"] for item in vendas_lista]
+            title=ft.Text("🛒 Lançar Vendas Individualmente", color=PALETA["texto_preto"]),
+            controls=[ft.Container(content=ft.Column([i["val"], i["perc"]]), padding=10) for i in vendas_lista]
         ),
         ft.ElevatedButton(
-            "GERAR EXTRATO E CONSULTAR IA", 
-            on_click=realizar_calculo, 
+            "CALCULAR EXTRATO COMPLETO", 
+            on_click=processar, 
             bgcolor=PALETA["primaria"], 
             color="white", 
-            height=60, 
-            width=500
+            height=55, 
+            width=float("inf")
         ),
         res_container
     )
