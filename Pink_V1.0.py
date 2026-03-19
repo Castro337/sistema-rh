@@ -5,12 +5,12 @@ import os
 PALETA = {
     "primaria": ft.Colors.PINK_400,
     "fundo": ft.Colors.WHITE,
-    "card_bg": ft.Colors.PINK_50,
-    "texto": ft.Colors.PINK_900
+    "card_bg": ft.Colors.PINK_60,
+    "texto": ft.Colors.PINK_400
 }
 
 def main(page: ft.Page):
-    page.title = "Pink V3.1 | Gestão Completa"
+    page.title = "Pink V3.1 | Gestão Completa | By Jean Castro"
     page.bgcolor = PALETA["fundo"]
     page.scroll = ft.ScrollMode.ADAPTIVE
     page.padding = 30
