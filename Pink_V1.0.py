@@ -34,8 +34,8 @@ def main(page: ft.Page):
     page.window_width = 450
 
     # --- CAMPOS DE ENTRADA ---
-    salario_in = ft.TextField(label="Salário Base", prefix_text="R$ ", border_color="pink")
-    vendas_in = ft.TextField(label="Total Vendas", prefix_text="R$ ", value="0")
+    salario_in = ft.TextField(label="Salário Base", prefix=ft.Text("R$ "), border_color="pink")
+    vendas_in = ft.TextField(label="Total Vendas", prefix=ft.Text("R$ "), value="0")
     faltas_in = ft.TextField(label="Faltas no Mês", value="0")
 
     # --- EXIBIÇÃO DE RESULTADOS ---
