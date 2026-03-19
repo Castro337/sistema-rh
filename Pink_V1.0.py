@@ -1,17 +1,3 @@
-Fala, Jean! Que evolução bacana no código. O sistema Pink está virando uma ferramenta de RH completa.
-
-Para implementar o que você pediu, precisamos de três grandes mudanças:
-
-Lógica da Escala 5x2: Calcular o DSR (Descanso Semanal Remunerado) e os dias úteis.
-
-Cálculo de Impostos (INSS e IRRF): Usar as tabelas oficiais (ajustei com os valores aproximados de 2026).
-
-Integração com a Aurora (IA): Como estamos no Render, vamos simular a resposta da IA dentro do sistema (ou você pode conectar a uma chave da API do Gemini depois).
-
-Aqui está o código atualizado. Atenção: Como você vai atualizar o site, lembre-se de salvar este código no lugar do anterior e subir para o GitHub!
-
-Código Atualizado: Pink V2.0 (Com Aurora IA)
-Python
 import flet as ft
 import os
 
