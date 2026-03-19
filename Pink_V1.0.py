@@ -3,7 +3,7 @@ import os
 
 # 1. PADRÕES DE DESIGN (Contraste Máximo e Cores Profissionais)
 PALETA = {
-    "primaria": ft.Colors.DEEP_PURPLE_700,
+    "primaria": ft.Colors.PINK_600,
     "fundo": ft.Colors.WHITE,
     "card_fundo": "#F5F5F5",
     "ia_cor": ft.Colors.PINK_700,
