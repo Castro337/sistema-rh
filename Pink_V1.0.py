@@ -1,138 +1,149 @@
 import flet as ft
 import os
 
-# 1. ESTILOS (Voltando para o Rosa Vibrante)
+# 1. PALETA DE CORES DE ALTO CONTRASTE
 PALETA = {
-    "primaria": ft.Colors.PINK_400,
-    "fundo": ft.Colors.WHITE,
-    "card_bg": ft.Colors.PINK_60,
-    "texto": ft.Colors.PINK_400
+    "primaria": ft.Colors.PINK_600,       # Rosa forte para botões
+    "fundo_tela": ft.Colors.WHITE,       # Fundo branco puro
+    "fundo_card": "#FFF0F5",             # Rosa ultra claro para destacar blocos
+    "texto_preto": ft.Colors.BLACK,      # Texto principal sempre preto
+    "texto_destaque": ft.Colors.PINK_900 # Títulos em rosa bem escuro
 }
 
 def main(page: ft.Page):
-    page.title = "Pink V3.1 | Gestão Completa | By Jean Castro"
-    page.bgcolor = PALETA["fundo"]
+    page.title = "Pink V3.2 | Visibilidade Total"
+    page.bgcolor = PALETA["fundo_tela"]
     page.scroll = ft.ScrollMode.ADAPTIVE
     page.padding = 30
-    page.spacing = 20
+    page.spacing = 25
 
-    # --- FUNÇÃO AUXILIAR PARA CRIAR CARDS ---
-    def criar_card(titulo, controles, cor_borda=PALETA["primaria"]):
-        return ft.Container(
-            content=ft.Column([
-                ft.Text(titulo, weight="bold", size=16, color=PALETA["texto"]),
-                *controles
-            ], spacing=15),
-            padding=20,
-            border=ft.border.all(1, cor_borda),
-            border_radius=15,
-            bgcolor=PALETA["card_bg"]
+    # Estilo padrão para os textos das etiquetas (Labels)
+    estilo_label = ft.TextStyle(color=PALETA["texto_preto"], weight="bold")
+
+    def criar_input_monetario(label):
+        return ft.TextField(
+            label=label,
+            prefix=ft.Text("R$ ", color=PALETA["texto_preto"]),
+            label_style=ft.TextStyle(color=ft.Colors.PINK_800, weight="bold"),
+            color=PALETA["texto_preto"],
+            border_color=PALETA["primaria"],
+            border_radius=12,
+            bgcolor=ft.Colors.WHITE,
+            focused_border_color=ft.Colors.PINK_900
         )
 
-    # --- ENTRADAS PRINCIPAIS ---
-    salario_in = ft.TextField(label="Salário Base", prefix=ft.Text("R$ "), border_color=PALETA["primaria"], border_radius=10)
+    # --- CAMPOS ---
+    salario_in = criar_input_monetario("Salário Base")
     
-    # 5 PRODUTOS: Valor + % Individual
-    vendas_inputs = []
+    # 5 Produtos (Valor + %)
+    vendas_data = []
     for i in range(5):
-        v = ft.TextField(label=f"Valor Produto {i+1}", prefix=ft.Text("R$ "), value="0")
-        p = ft.Slider(min=0, max=100, divisions=100, label="Comissão: {value}%", value=3)
-        vendas_inputs.append({"valor": v, "perc": p})
+        v = criar_input_monetario(f"Valor Venda Produto {i+1}")
+        p = ft.Slider(min=0, max=100, divisions=100, label="Comissão: {value}%", thumb_color=PALETA["primaria"])
+        vendas_data.append({"v": v, "p": p})
 
-    # 5 BENEFÍCIOS: Valor + % Individual
-    ben_inputs = []
+    # 5 Benefícios (Valor + %)
+    ben_data = []
     for i in range(5):
-        v = ft.TextField(label=f"Valor Base Benefício {i+1}", prefix=ft.Text("R$ "), value="0")
-        p = ft.Slider(min=0, max=100, divisions=100, label="Pagar: {value}%", value=100)
-        ben_inputs.append({"valor": v, "perc": p})
+        v = criar_input_monetario(f"Valor Base Benefício {i+1}")
+        p = ft.Slider(min=0, max=100, divisions=100, label="Pagar: {value}%", thumb_color=ft.Colors.BLUE_700)
+        ben_data.append({"v": v, "p": p})
 
-    # --- OPÇÕES DE CÁLCULO ---
     tipo_calc = ft.Dropdown(
-        label="Tipo de Cálculo",
+        label="Escolha o Tipo de Cálculo",
+        label_style=estilo_label,
         options=[ft.dropdown.Option("Mensal"), ft.dropdown.Option("Férias"), ft.dropdown.Option("Rescisão")],
-        value="Mensal"
+        value="Mensal",
+        color=PALETA["texto_preto"],
+        border_color=PALETA["primaria"]
     )
     
-    ferias_venc_radio = ft.RadioGroup(
+    radio_ferias = ft.RadioGroup(
         content=ft.Row([
-            ft.Radio(value="sim", label="Sim"),
-            ft.Radio(value="nao", label="Não")
-        ]), value="nao"
+            ft.Radio(value="sim", label="Sim", label_style=estilo_label),
+            ft.Radio(value="nao", label="Não", label_style=estilo_label)
+        ], alignment=ft.MainAxisAlignment.CENTER),
+        value="nao"
     )
 
-    meses_rescisao = ft.TextField(label="Meses Trabalhados", value="0", visible=False)
+    meses_txt = ft.TextField(label="Meses Trabalhados", visible=False, color=PALETA["texto_preto"])
 
-    def mudar_tipo(e):
-        meses_rescisao.visible = (tipo_calc.value == "Rescisão")
+    # --- LOGICA ---
+    def atualizar_campos(e):
+        meses_txt.visible = (tipo_calc.value == "Rescisão")
         page.update()
     
-    tipo_calc.on_change = mudar_tipo
+    tipo_calc.on_change = atualizar_campos
 
-    # --- RESULTADO ---
-    res_txt = ft.Text("", weight="bold", size=16)
-    container_res = ft.Container(content=res_txt, visible=False, padding=20, bgcolor=ft.Colors.GREEN_50, border_radius=15)
+    res_container = ft.Container(
+        content=ft.Text("", color=PALETA["texto_preto"], size=16, weight="bold"),
+        visible=False,
+        padding=20,
+        bgcolor=ft.Colors.AMBER_100,
+        border_radius=15,
+        border=ft.border.all(2, PALETA["primaria"])
+    )
 
     def calcular(e):
         try:
             sal = float(salario_in.value or 0)
+            c_total = sum([float(item["v"].value or 0) * (item["p"].value / 100) for item in vendas_data])
+            b_total = sum([float(item["v"].value or 0) * (item["p"].value / 100) for item in ben_data])
             
-            # Cálculo Vendas Individuais
-            total_comissao = sum([float(x["valor"].value or 0) * (x["perc"].value / 100) for x in vendas_inputs])
+            bruto = sal + c_total + b_total
+            liq = bruto * 0.85 # Simulação simples de impostos
             
-            # Cálculo Benefícios Individuais
-            total_ben = sum([float(x["valor"].value or 0) * (x["perc"].value / 100) for x in ben_inputs])
-            
-            bruto = sal + total_comissao + total_ben
-            
-            # Impostos (Simulados)
-            inss = bruto * 0.11 if bruto < 4000 else bruto * 0.14
-            irrf = (bruto - inss) * 0.075 if bruto > 2250 else 0
-            liquido = bruto - inss - irrf
-
-            msg = f"💰 Bruto: R$ {bruto:.2f}\n📈 Comissões: R$ {total_comissao:.2f}\n📉 Descontos: R$ {inss+irrf:.2f}\n"
+            texto_res = f"📊 RESUMO DO CÁLCULO\n\n💰 Bruto: R$ {bruto:.2f}\n📈 Comissões: R$ {c_total:.2f}\n🌟 Benefícios: R$ {b_total:.2f}\n💵 Líquido Est.: R$ {liq:.2f}"
             
             if tipo_calc.value == "Rescisão":
-                meses = int(meses_rescisao.value or 0)
-                decimo = (sal / 12) * meses
-                ferias_prop = ((sal + (sal/3)) / 12) * meses
-                total_rec = liquido + decimo + ferias_prop
-                msg += f"📅 Décimo Proporcional: R$ {decimo:.2f}\n🏖️ Férias Proporcionais: R$ {ferias_prop:.2f}\n🔥 TOTAL RESCISÃO: R$ {total_rec:.2f}"
-            else:
-                msg += f"💵 LÍQUIDO FINAL: R$ {liquido:.2f}"
+                m = int(meses_txt.value or 0)
+                rescisao = liq + (sal/12 * m)
+                texto_res += f"\n\n🔥 TOTAL RESCISÃO: R$ {rescisao:.2f}"
 
-            res_txt.value = msg
-            container_res.visible = True
+            res_container.content.value = texto_res
+            res_container.visible = True
             page.update()
-        except Exception as ex:
-            res_txt.value = f"Erro: Verifique os números preenchidos."
-            container_res.visible = True
+        except:
+            res_container.content.value = "⚠️ Erro: Use apenas números nos valores."
+            res_container.visible = True
             page.update()
 
-    # --- MONTAGEM FINAL ---
+    # --- LAYOUT ESTRUTURADO ---
     page.add(
-        ft.Text("PINK SYSTEM V3.1", size=30, weight="bold", color=PALETA["primaria"]),
+        ft.Text("SISTEMA PINK V3.2", size=28, weight="bold", color=PALETA["texto_destaque"]),
         
-        criar_card("💼 Salário Base", [salario_in]),
+        ft.Container(content=salario_in, padding=10, bgcolor=PALETA["fundo_card"], border_radius=15),
         
         ft.ExpansionTile(
-            title=ft.Text("📦 Vendas Individuais (Valor e %)", weight="bold"),
-            controls=[ft.Container(content=ft.Column([ft.Column([x["valor"], x["perc"], ft.Divider()]) for x in vendas_inputs]), padding=10)]
+            title=ft.Text("📦 VENDAS (VALOR + % INDIVIDUAL)", color=PALETA["texto_destaque"], weight="bold"),
+            controls=[ft.Column([ft.Container(content=ft.Column([item["v"], item["p"]]), padding=15) for item in vendas_data])]
         ),
         
         ft.ExpansionTile(
-            title=ft.Text("🎁 Benefícios Individuais (Valor e %)", weight="bold"),
-            controls=[ft.Column([ft.Container(content=ft.Column([x["valor"], x["perc"]]), padding=10) for x in ben_inputs])]
+            title=ft.Text("🎁 BENEFÍCIOS (VALOR + % INDIVIDUAL)", color=PALETA["texto_destaque"], weight="bold"),
+            controls=[ft.Column([ft.Container(content=ft.Column([item["v"], item["p"]]), padding=15) for item in ben_data])]
         ),
         
-        criar_card("⚙️ Configurações e Rescisão", [
-            tipo_calc,
-            ft.Text("Possui férias vencidas?"),
-            ferias_venc_radio,
-            meses_rescisao
-        ]),
+        ft.Container(
+            content=ft.Column([
+                tipo_calc,
+                ft.Text("Possui férias vencidas?", color=PALETA["texto_preto"], weight="bold"),
+                radio_ferias,
+                meses_txt
+            ], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
+            padding=20, bgcolor=PALETA["fundo_card"], border_radius=15
+        ),
         
-        ft.ElevatedButton("CALCULAR TUDO", on_click=calcular, bgcolor=PALETA["primaria"], color="white", height=50),
-        container_res
+        ft.ElevatedButton(
+            "CALCULAR RESULTADOS",
+            on_click=calcular,
+            bgcolor=PALETA["primaria"],
+            color=ft.Colors.WHITE,
+            height=60,
+            width=400
+        ),
+        
+        res_container
     )
 
 if __name__ == "__main__":
