@@ -1,4 +1,4 @@
-mport flet as ft
+import flet as ft
 import os
 
 # 1. PADRÕES DE DESIGN (Alto Contraste e Rosa Vibrante)
