@@ -1,7 +1,7 @@
 import flet as ft
 import os
 
-# 1. PADRÕES DE DESIGN (Contraste Máximo e Cores Profissionais)
+# 1. PADRÕES DE DESIGN (Identidade Visual PINK)
 PALETA = {
     "primaria": ft.Colors.PINK_600,
     "fundo": ft.Colors.WHITE,
@@ -17,23 +17,43 @@ def main(page: ft.Page):
     page.bgcolor = PALETA["fundo"]
     page.scroll = ft.ScrollMode.ADAPTIVE
     page.padding = 30
+    page.theme_mode = ft.ThemeMode.LIGHT
 
-    # --- MOTOR DE CÁLCULO CLT ---
+    # --- MOTOR DE CÁLCULO CLT 2026 (ATUALIZADO) ---
     def calcular_impostos(valor):
-        if valor <= 1518: inss = valor * 0.075
-        elif valor <= 2793: inss = (valor * 0.09) - 22.77
-        elif valor <= 4190: inss = (valor * 0.12) - 106.56
-        else: inss = (valor * 0.14) - 190.36
+        # Cálculo do INSS 2026 (Baseado nas faixas de 1.518,00 a 8.157,41)
+        if valor <= 1518.00:
+            inss = valor * 0.075
+        elif valor <= 2793.88:
+            inss = (valor * 0.09) - 22.77
+        elif valor <= 4190.83:
+            inss = (valor * 0.12) - 106.56
+        elif valor <= 8157.41:
+            inss = (valor * 0.14) - 190.38
+        else:
+            inss = 951.66  # Teto máximo de contribuição 2026
         
+        # Cálculo do IRRF 2026 (Base de cálculo = Bruto - INSS)
         base_ir = valor - inss
-        irrf = (base_ir * 0.075) - 169.44 if base_ir > 2259 else 0
+        
+        if base_ir <= 2259.20:
+            irrf = 0
+        elif base_ir <= 2826.65:
+            irrf = (base_ir * 0.075) - 169.44
+        elif base_ir <= 3751.05:
+            irrf = (base_ir * 0.15) - 381.44
+        elif base_ir <= 4664.68:
+            irrf = (base_ir * 0.225) - 662.77
+        else:
+            irrf = (base_ir * 0.275) - 896.00
+            
         return round(inss, 2), round(max(0, irrf), 2)
 
-    # --- CAMPOS DE ENTRADA ---
+    # --- COMPONENTES DE INTERFACE ---
     modo_calc = ft.RadioGroup(
         content=ft.Row([
-            ft.Radio(value="mensal", label="Cálculo Mensal", label_style=ft.TextStyle(color=PALETA["texto"])),
-            ft.Radio(value="rescisao", label="Cálculo Rescisão", label_style=ft.TextStyle(color=PALETA["texto"]))
+            ft.Radio(value="mensal", label="Folha Mensal", label_style=ft.TextStyle(color=PALETA["texto"])),
+            ft.Radio(value="rescisao", label="Rescisão (Aviso Prévio)", label_style=ft.TextStyle(color=PALETA["texto"]))
         ]), 
         value="mensal"
     )
@@ -43,91 +63,114 @@ def main(page: ft.Page):
         prefix=ft.Text("R$ ", color=PALETA["texto"]), 
         border_color=PALETA["primaria"],
         color=PALETA["texto"],
-        text_style=ft.TextStyle(weight="bold")
+        keyboard_type=ft.KeyboardType.NUMBER
     )
 
     extra_in = ft.TextField(
-        label="Benefícios / Prêmios Extras", 
+        label="Outros Benefícios", 
         prefix=ft.Text("R$ ", color=PALETA["texto"]), 
         border_color=PALETA["primaria"],
         color=PALETA["texto"],
-        value="0"
+        value="0",
+        keyboard_type=ft.KeyboardType.NUMBER
     )
 
-    # LISTA DE PRODUTOS COM QUANTIDADE
+    # LISTA DINÂMICA DE PRODUTOS (Adaptado da lógica de contagem)
     vendas_lista = []
     for i in range(1, 4):
-        qtd = ft.TextField(label="Qtd", value="1", width=80, color=PALETA["texto"])
-        prod = ft.TextField(label=f"Produto {i}", expand=True, color=PALETA["texto"])
-        val_un = ft.TextField(label="Valor Un.", prefix=ft.Text("R$ "), width=120, color=PALETA["texto"])
+        qtd = ft.TextField(label="Qtd", value="1", width=70, color=PALETA["texto"])
+        prod = ft.TextField(label=f"Produto {i}", expand=True, color=PALETA["texto"], hint_text="Nome do item")
+        val_un = ft.TextField(label="Valor Un.", prefix=ft.Text("R$ "), width=110, color=PALETA["texto"])
         perc = ft.Slider(min=0, max=20, divisions=20, label="Comissão: {value}%", value=3)
         
         vendas_lista.append({"qtd": qtd, "prod": prod, "val": val_un, "perc": perc})
 
-    # --- ÁREA DE RESULTADO ---
-    res_container = ft.Container(visible=False, padding=25, border_radius=20, bgcolor=PALETA["card_fundo"], border=ft.border.all(1, ft.Colors.GREY_400))
-    res_txt = ft.Text("", color=PALETA["texto"], size=15)
+    res_container = ft.Container(
+        visible=False, 
+        padding=25, 
+        border_radius=15, 
+        bgcolor=PALETA["card_fundo"], 
+        border=ft.border.all(1, ft.Colors.PINK_100)
+    )
+    res_txt = ft.Text("", color=PALETA["texto"], size=14, font_family="monospace")
     ia_txt = ft.Text("", color=PALETA["ia_cor"], italic=True, weight="bold")
 
     def processar(e):
         try:
-            base = float(salario_in.value or 0)
-            extras = float(extra_in.value or 0)
+            base = float(salario_in.value.replace(",", ".") or 0)
+            extras = float(extra_in.value.replace(",", ".") or 0)
             
             comissao_total = 0
             detalhe_itens = ""
             
+            # Lógica de processamento dos itens de venda
             for item in vendas_lista:
                 q = float(item["qtd"].value or 0)
-                v = float(item["val"].value or 0)
+                v = float(item["val"].value.replace(",", ".") or 0)
                 p = item["perc"].value / 100
                 if q > 0 and v > 0:
                     subtotal = (q * v) * p
                     comissao_total += subtotal
-                    nome = item["prod"].value or f"Produto"
+                    nome = item["prod"].value or "Produto s/ nome"
                     detalhe_itens += f"   • {int(q)}x {nome}: R$ {subtotal:.2f}\n"
 
             bruto = base + extras + comissao_total
-            aviso_previo = 0
+            
             if modo_calc.value == "rescisao":
-                aviso_previo = base
-                bruto += aviso_previo
+                bruto += base  # Simulação simples de aviso prévio indenizado
 
             inss, irrf = calcular_impostos(bruto)
             liquido = bruto - inss - irrf
 
             res_txt.value = (
-                f"📊 RELATÓRIO: {modo_calc.value.upper()}\n"
-                f"-------------------------------------------\n"
-                f"✅ PROVENTOS (ENTRADAS):\n"
-                f"   • Salário Base: R$ {base:.2f}\n"
-                f"   • Extras: R$ {extras:.2f}\n"
-                f"   • Comissões: R$ {comissao_total:.2f}\n"
+                f"📊 EXTRATO SALARIAL 2026 - {modo_calc.value.upper()}\n"
+                f"{'='*40}\n"
+                f"(+) Salário Base:    R$ {base:>10.2f}\n"
+                f"(+) Comissões:       R$ {comissao_total:>10.2f}\n"
+                f"(+) Outros Extras:   R$ {extras:>10.2f}\n"
                 f"{detalhe_itens}"
-                + (f"   • Aviso Prévio: R$ {aviso_previo:.2f}\n" if aviso_previo > 0 else "") +
-                f"\n❌ DEDUÇÕES (SAÍDAS):\n"
-                f"   • INSS: R$ {inss:.2f}\n"
-                f"   • IRRF: R$ {irrf:.2f}\n"
-                f"-------------------------------------------\n"
-                f"💰 LÍQUIDO FINAL: R$ {liquido:.2f}"
+                f"{'-'*40}\n"
+                f"(-) INSS (2026):     R$ {inss:>10.2f}\n"
+                f"(-) IRRF (2026):     R$ {irrf:>10.2f}\n"
+                f"{'='*40}\n"
+                f"💰 LÍQUIDO A RECEBER: R$ {liquido:>9.2f}\n"
             )
 
-            ia_txt.value = "🤖 IA PINK: Vendas processadas por quantidade. Tudo pronto!"
+            ia_txt.value = "🤖 IA PINK: Cálculos realizados com as tabelas de 2026. Revisado!"
             res_container.visible = True
             page.update()
-        except:
-            page.snack_bar = ft.SnackBar(ft.Text("Erro: Use números e ponto nos valores."))
+            
+        except ValueError:
+            page.snack_bar = ft.SnackBar(ft.Text("Erro: Insira apenas números válidos nos valores."))
             page.snack_bar.open = True
             page.update()
 
-    # --- LAYOUT FINAL ---
+    # --- CONSTRUÇÃO DO LAYOUT ---
+    header = ft.Column([
+        ft.Text("PINK Calculo Salarial", size=32, weight="bold", color=PALETA["primaria"]),
+        ft.Text("By Jean Castro | v2.0-2026", size=14, color=ft.Colors.GREY_700),
+    ], spacing=0)
+
+    btn_calcular = ft.ElevatedButton(
+        "GERAR RELATÓRIO COMPLETO", 
+        on_click=processar, 
+        bgcolor=PALETA["primaria"], 
+        color="white", 
+        height=50, 
+        width=float("inf"),
+        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10))
+    )
+
     page.add(
-        ft.Text("PINKCalculo Salarial | By Jean Castro", size=28, weight="bold", color=PALETA["primaria"]),
+        header,
+        ft.Divider(height=20, color="transparent"),
+        ft.Text("Configurações de Salário", weight="bold", size=18),
         modo_calc,
         salario_in,
         extra_in,
         ft.ExpansionTile(
-            title=ft.Text("🛒 Lançar Vendas (Qtd x Valor)", color=PALETA["texto"], weight="bold"),
+            title=ft.Text("🛒 Lançamento de Vendas e Comissões", color=PALETA["texto"], weight="bold"),
+            subtitle=ft.Text("Clique para expandir e inserir produtos"),
             controls=[
                 ft.Container(
                     content=ft.Column([
@@ -138,11 +181,13 @@ def main(page: ft.Page):
                 ) for i in vendas_lista
             ]
         ),
-        ft.ElevatedButton("GERAR EXTRATO COMPLETO", on_click=processar, bgcolor=PALETA["primaria"], color="white", height=55, width=float("inf")),
+        ft.Divider(height=10, color="transparent"),
+        btn_calcular,
         res_container
     )
     res_container.content = ft.Column([res_txt, ft.Divider(), ia_txt])
 
 if __name__ == "__main__":
+    # Configuração para rodar no servidor ou localmente
     port = int(os.getenv("PORT", 8000))
     ft.app(target=main, view=ft.AppView.WEB_BROWSER, host="0.0.0.0", port=port)
