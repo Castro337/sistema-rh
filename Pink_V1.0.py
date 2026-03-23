@@ -1,16 +1,3 @@
-Jean, o seu código está muito bem estruturado, especialmente a parte do motor de cálculo e a identidade visual com a PALETA.
-
-Para acrescentar a lógica de Rescisão Contratual completa sem remover nada, precisamos de três passos:
-
-Novos Campos de Entrada: Data de entrada, data de saída e o motivo da rescisão.
-
-Lógica de Cálculo de Proporcionais: Cálculo de saldo de salário, férias proporcionais (+ 1/3) e 13º proporcional.
-
-Integração no Processamento: Unir esses valores ao relatório final.
-
-Aqui está o código atualizado com essas adições:
-
-Python
 import flet as ft
 import os
 from datetime import datetime
